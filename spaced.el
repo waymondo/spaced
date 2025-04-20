@@ -126,7 +126,8 @@
 
 (define-minor-mode spaced-mode
   ""
-  :global t
+  :global nil
+  :group 'electricity
   (if spaced-mode
       (add-hook 'post-self-insert-hook #'spaced-post-self-insert-function nil t)
     (remove-hook 'post-self-insert-hook #'spaced-post-self-insert-function t)))
