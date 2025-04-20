@@ -27,24 +27,40 @@
 
 (setq spaced-vectors-alist
       '(
-        ((js-ts-mode typescript-ts-mode) . (
-                                            [":" ": "]
-                                            ))
-        (ruby-ts-mode . (
-                         [":" ": " spaced-ruby-ts-mode-at-non-constant-word]
-                         )
-                      )
-        (nil . (
-                [":" ": "]
-                ["::" "::"]
-                ["=" " = "]
-                ["==" " == "]
-                ["===" " === "]
-                ["||" " || "]
-                ["||=" " ||= "]
-                ))
-        )
-      )
+        (ruby-base-mode . (
+                           [":" ": " spaced-ruby-ts-mode-at-non-constant-word]
+                           ))
+        ((js-base-mode typescript-ts-mode) . (
+                                              ["=>" " => "]
+                                              ["//" "// "]
+                                              ))
+        (prog-mode . (
+                      ["::" "::"]
+                      [":" ": "]
+                      ["===" " === "]
+                      ["==" " == "]
+                      ["=" " = "]
+                      ["!== " " !== "]
+                      ["!=" " != "]
+                      ["||=" " ||= "]
+                      ["||" " || "]
+                      [">= " " >= "]
+                      [">" " > "]
+                      ["<= " " <= "]
+                      ["<" " < "]
+                      ["," ", "]
+                      ))
+        (text-mode . (
+                      ["," ", "]
+                      ["..." "... "]
+                      [".." ".. "]
+                      ["." ". "]
+                      ["?!" "?! "]
+                      ["!?" "!? "]
+                      ["!" "! "]
+                      ["?" "? "]
+                      ))
+        ))
 
 (defun spaced-ruby-ts-mode-at-non-constant-word ()
   (save-excursion
@@ -66,12 +82,16 @@
    str))
 
 (defun spaced-vectors-for-mode ()
-  (catch 'found
+  (let ((vectors '()))
     (dolist (pair spaced-vectors-alist)
       (let* ((modes (car pair))
              (mode-list (if (listp modes) modes (list modes))))
-        (when (or (cl-some (lambda (x) (derived-mode-p x)) mode-list) (eq nil modes))
-          (throw 'found (cdr pair)))))))
+        (let ((triggers (mapcar (lambda (vector) (aref vector 0)) vectors)))
+          (when (cl-some (lambda (mode) (derived-mode-p mode)) mode-list)
+            (dolist (vector (cdr pair))
+              (unless (member (aref vector 0) triggers)
+                (push vector vectors)))))))
+    vectors))
 
 (defun spaced-post-self-insert-function ()
   (let* ((start (max (line-beginning-position) (- (point) 7)))
@@ -111,7 +131,6 @@
                     (setq delete-length (+ count delete-length))
                     (throw 'break "adjusted delete length"))
                   (setq count (1- count)))))))
-
 
         (catch 'break
           (when condition
