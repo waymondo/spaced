@@ -1,7 +1,12 @@
 ;;; spaced.el --- -*- lexical-binding: t -*-
 
 (setq spaced-vectors-alist
-      '((nil . (
+      '(
+        (ruby-ts-mode . (
+                         [":" ": " spaced-ruby-ts-mode-at-non-constant-word]
+                         )
+                      )
+        (nil . (
                 [":" ": "]
                 ["::" "::"]
                 ["=" " = "]
@@ -9,7 +14,16 @@
                 ["===" " === "]
                 ["||" " || "]
                 ["||=" " ||= "]
-                ))))
+                ))
+        )
+      )
+
+(defun spaced-ruby-ts-mode-at-non-constant-word ()
+  (save-excursion
+    (backward-char)
+    (and (looking-back "[[:word:]]" nil)
+         (not (memq (get-text-property (- (point) 1) 'face)
+                    '(font-lock-type-face tree-sitter-hl-face:type))))))
 
 (defun spaced-compare-char-frequencies (str1 str2)
   (equal (sort (append str1 nil) '<)
@@ -42,11 +56,12 @@
     (when-let* ((longest-match (pop matches)))
       (let* ((trigger (aref longest-match 0))
              (template (aref longest-match 1))
+             (condition (if (> (length longest-match) 2) (aref longest-match 2) nil))
              (delete-length (length trigger))
              (template-length (length template))
              (str (buffer-substring-no-properties (- (point) delete-length) (point))))
-
         (when (not (string= str trigger))
+
           (if (> template-length delete-length)
               (let ((count template-length))
                 (catch 'break
@@ -67,12 +82,17 @@
                     (throw 'break "adjusted delete length"))
                   (setq count (1- count)))))))
 
-        (let ((delete-point (- (point) delete-length))
-              (goggles-pulse nil))
-          (when (not (string= template (buffer-substring-no-properties delete-point (point))))
-            (undo-boundary)
-            (delete-region delete-point (point))
-            (insert template)))))))
+
+        (catch 'break
+          (when condition
+            (when (not (funcall condition))
+              (throw 'break "condition not met")))
+          (let ((delete-point (- (point) delete-length))
+                (goggles-pulse nil))
+            (when (not (string= template (buffer-substring-no-properties delete-point (point))))
+              (undo-boundary)
+              (delete-region delete-point (point))
+              (insert template))))))))
 
 (define-minor-mode spaced-mode
   ""
