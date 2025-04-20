@@ -1,16 +1,15 @@
 ;;; spaced.el --- -*- lexical-binding: t -*-
 
-(setq spaced-vectors
-      '(
-        [":" ": "]
-        ["::" "::"]
-        ["=" " = "]
-        ["==" " == "]
-        ["===" " === "]
-        ["||" " || "]
-        ["||=" " ||= "]
-        )
-      )
+(setq spaced-vectors-alist
+      '((nil . (
+                [":" ": "]
+                ["::" "::"]
+                ["=" " = "]
+                ["==" " == "]
+                ["===" " === "]
+                ["||" " || "]
+                ["||=" " ||= "]
+                ))))
 
 (defun spaced-compare-char-frequencies (str1 str2)
   (equal (sort (append str1 nil) '<)
@@ -24,11 +23,18 @@
                        (if (string-suffix-p " " m) " " ""))) ;; Keep at most one trailing space
    str))
 
+(defun spaced-vectors-for-mode ()
+  (catch 'found
+    (dolist (pair spaced-vectors-alist)
+      (when (or (derived-mode-p (car pair)) (eq nil (car pair)))
+        (throw 'found (cdr pair))))))
+
 (defun spaced-post-self-insert-function ()
   (let* ((start (max (line-beginning-position) (- (point) 7)))
          (str (spaced-remove-extra-spaces (buffer-substring-no-properties start (point))))
+         (vectors (spaced-vectors-for-mode))
          (matches nil))
-    (dolist (vector spaced-vectors)
+    (dolist (vector vectors)
       (let ((trigger (aref vector 0))
             (template (aref vector 1)))
         (when (string-suffix-p trigger str)
