@@ -2,6 +2,9 @@
 
 (setq spaced-vectors-alist
       '(
+        ((js-ts-mode typescript-ts-mode) . (
+                                            [":" ": "]
+                                            ))
         (ruby-ts-mode . (
                          [":" ": " spaced-ruby-ts-mode-at-non-constant-word]
                          )
@@ -40,8 +43,10 @@
 (defun spaced-vectors-for-mode ()
   (catch 'found
     (dolist (pair spaced-vectors-alist)
-      (when (or (derived-mode-p (car pair)) (eq nil (car pair)))
-        (throw 'found (cdr pair))))))
+      (let* ((modes (car pair))
+             (mode-list (if (listp modes) modes (list modes))))
+        (when (or (cl-some (lambda (x) (derived-mode-p x)) mode-list) (eq nil modes))
+          (throw 'found (cdr pair)))))))
 
 (defun spaced-post-self-insert-function ()
   (let* ((start (max (line-beginning-position) (- (point) 7)))
